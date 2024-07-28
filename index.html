@@ -5,17 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-time Left and Right Forces Graph</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Real-time Left and Right Forces Graph</h1>
-    <div class="wrapper">
-        <div id="leftGraph" style="width: 33%; height: 400px; display: inline-block;"></div>
-        <div id="combinedGraph" style="width: 33%; height: 400px; display: inline-block;"></div>
-        <div id="rightGraph" style="width: 33%; height: 400px; display: inline-block;"></div>
+    <div class="container">
+        <h1>Real-time Left and Right Forces Graph</h1>
+        <div class="graphs">
+            <div id="leftGraph"></div>
+            <div id="combinedGraph"></div>
+            <div id="rightGraph"></div>
+        </div>
+        <div class="gauges">
+            <div id="speedGauge" class="gauge"></div>
+            <div id="distanceGauge" class="gauge"></div>
+            <div id="stepsGauge" class="gauge"></div>
+            <div id="timeGauge" class="gauge"></div>
+        </div>
+        <button id="connectButton">Connect</button>
+        <button id="pauseButton">Pause</button>
     </div>
-    <button id="connectButton">Connect</button>
-    <button id="pauseButton">Pause</button>
     <script src="script.js"></script>
 </body>
 </html>
