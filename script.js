@@ -1,42 +1,42 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the Plotly graphs with empty data
-    var traceLeft = {
-        x: [],
-        y: [],
-        mode: 'lines',
-        name: 'Left',
-        line: { color: 'orange' }
-    };
+document.addEventListener('DOMContentLoaded', function () {
+    var traceLeft = { x: [], y: [], mode: 'lines', name: 'Left', line: { color: 'orange' } };
+    var traceRight = { x: [], y: [], mode: 'lines', name: 'Right', line: { color: 'blue' } };
 
-    var traceRight = {
-        x: [],
-        y: [],
-        mode: 'lines',
-        name: 'Right',
-        line: { color: 'blue' }
-    };
-
-    var layoutLeft = {
-        title: 'Real-time Left Forces',
-        xaxis: { title: 'Time (seconds)' },
-        yaxis: { title: 'Force (Newtons)' }
-    };
-
-    var layoutCombined = {
-        title: 'Real-time Combined Left and Right Forces',
-        xaxis: { title: 'Time (seconds)' },
-        yaxis: { title: 'Force (Newtons)' }
-    };
-
-    var layoutRight = {
-        title: 'Real-time Right Forces',
-        xaxis: { title: 'Time (seconds)' },
-        yaxis: { title: 'Force (Newtons)' }
-    };
+    var layoutLeft = { title: 'Real-time Left Forces', xaxis: { title: 'Time (seconds)' }, yaxis: { title: 'Force (Newtons)' } };
+    var layoutCombined = { title: 'Real-time Combined Left and Right Forces', xaxis: { title: 'Time (seconds)' }, yaxis: { title: 'Force (Newtons)' } };
+    var layoutRight = { title: 'Real-time Right Forces', xaxis: { title: 'Time (seconds)' }, yaxis: { title: 'Force (Newtons)' } };
 
     Plotly.newPlot('leftGraph', [traceLeft], layoutLeft);
     Plotly.newPlot('combinedGraph', [traceLeft, traceRight], layoutCombined);
     Plotly.newPlot('rightGraph', [traceRight], layoutRight);
+
+    function createValueDisplay(elementId, title) {
+        var container = document.getElementById(elementId);
+        var titleElem = document.createElement('div');
+        titleElem.textContent = title;
+        titleElem.style.fontSize = '18px';
+        titleElem.style.marginBottom = '10px';
+
+        var valueElem = document.createElement('div');
+        valueElem.id = elementId + 'Value';
+        valueElem.style.fontSize = '48px';
+        valueElem.style.backgroundColor = '#f0f0f0';
+        valueElem.style.borderRadius = '50%';
+        valueElem.style.width = '100px';
+        valueElem.style.height = '100px';
+        valueElem.style.display = 'flex';
+        valueElem.style.alignItems = 'center';
+        valueElem.style.justifyContent = 'center';
+        valueElem.textContent = '0';
+
+        container.appendChild(titleElem);
+        container.appendChild(valueElem);
+    }
+
+    createValueDisplay('speedGauge', 'Speed');
+    createValueDisplay('distanceGauge', 'Distance');
+    createValueDisplay('stepsGauge', 'Steps');
+    createValueDisplay('timeGauge', 'Time');
 
     let port;
     let reader;
@@ -82,51 +82,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateGraph(data) {
         if (!isPaused) {
-            time += 1;
-            const values = data.replace("Random values: ", "").split(',');
+            const parsedData = data.match(/Random values: (\d+), (\d+), (\d+), (\d+), (\d+), (\d+)/);
+            if (parsedData) {
+                time += 1;
+                const [_, left, right, speed, distance, steps, timeValue] = parsedData.map(Number);
 
-            if (values.length >= 2) {
-                var newLeftData = parseFloat(values[0].trim());
-                var newRightData = parseFloat(values[1].trim());
+                console.log(`Parsed values - Left: ${left}, Right: ${right}, Speed: ${speed}, Distance: ${distance}, Steps: ${steps}, Time: ${timeValue}`);
 
-                console.log(`Parsed values - Left: ${newLeftData}, Right: ${newRightData}`);
+                var updateLeft = { x: [[timeValue]], y: [[left]] };
+                var updateRight = { x: [[timeValue]], y: [[right]] };
+                var updateCombined = { x: [[timeValue], [timeValue]], y: [[left], [right]] };
 
-                if (isNaN(newLeftData)) {
-                    console.error('Left data is NaN:', values[0]);
-                }
-                if (isNaN(newRightData)) {
-                    console.error('Right data is NaN:', values[1]);
-                }
-
-                var updateLeft = {
-                    x: [[time]],
-                    y: [[newLeftData]]
-                };
-
-                var updateRight = {
-                    x: [[time]],
-                    y: [[newRightData]]
-                };
-
-                // Update the left graph with left data
                 Plotly.extendTraces('leftGraph', updateLeft, [0]);
-
-                // Update the right graph with right data
                 Plotly.extendTraces('rightGraph', updateRight, [0]);
+                Plotly.extendTraces('combinedGraph', updateCombined, [0, 1]);
 
-                // Update the combined graph with both left and right data
-                Plotly.extendTraces('combinedGraph', {
-                    x: [[time], [time]],
-                    y: [[newLeftData], [newRightData]]
-                }, [0, 1]);
+                document.getElementById('speedGaugeValue').textContent = speed;
+                document.getElementById('distanceGaugeValue').textContent = distance;
+                document.getElementById('stepsGaugeValue').textContent = steps;
+                document.getElementById('timeGaugeValue').textContent = timeValue;
 
-                var olderTime = time - 50;
-                if (time > 50) {
-                    var range = { 'xaxis.range': [olderTime, time] };
+                var olderTime = timeValue - 50;
+                if (timeValue > 50) {
+                    var range = { 'xaxis.range': [olderTime, timeValue] };
+                    Plotly.relayout('combinedGraph', range);
                     Plotly.relayout('leftGraph', range);
                     Plotly.relayout('rightGraph', range);
-                    Plotly.relayout('combinedGraph', range);
                 }
+            } else {
+                console.error('Not enough data received:', data);
             }
         }
     }
